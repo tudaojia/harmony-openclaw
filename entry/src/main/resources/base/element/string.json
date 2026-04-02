@@ -1,0 +1,24 @@
+{
+  "string": [
+    {
+      "name": "module_desc",
+      "value": "OpenClaw for HarmonyOS Entry Module"
+    },
+    {
+      "name": "EntryAbility_desc",
+      "value": "OpenClaw main ability"
+    },
+    {
+      "name": "EntryAbility_label",
+      "value": "OpenClaw"
+    },
+    {
+      "name": "permission_internet_reason",
+      "value": "用于网络连接和下载资源"
+    },
+    {
+      "name": "permission_network_reason",
+      "value": "用于获取网络状态"
+    }
+  ]
+}
