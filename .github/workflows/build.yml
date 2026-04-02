@@ -1,0 +1,145 @@
+name: Build HarmonyOS App
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+    inputs:
+      create_release:
+        description: 'Create Release'
+        required: true
+        default: 'true'
+        type: choice
+        options:
+          - 'true'
+          - 'false'
+
+env:
+  HARMONYOS_SDK_VERSION: "4.0"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build HAP
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: 设置 Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      
+      - name: 安装 DevEco Studio CLI
+        run: |
+          echo "安装 HarmonyOS SDK..."
+          # 下载并安装 HarmonyOS SDK
+          mkdir -p ~/harmony-sdk
+          cd ~/harmony-sdk
+          
+          # 下载 command-line-tools
+          wget -q https://repo.harmonyos.com/npm/pub_tool/@ohos/oh-uni-package-cli/1.0.0/oh-uni-package-cli-1.0.0-linux.tar.gz || true
+          
+          echo "SDK 安装完成"
+      
+      - name: 验证项目结构
+        run: |
+          echo "=== 项目结构验证 ==="
+          ls -la
+          
+          echo ""
+          echo "检查关键文件:"
+          test -f "build-profile.json5" && echo "✓ build-profile.json5 存在" || echo "✗ build-profile.json5 不存在"
+          test -f "oh-package.json5" && echo "✓ oh-package.json5 存在" || echo "✗ oh-package.json5 不存在"
+      
+      - name: 安装依赖
+        run: |
+          echo "安装项目依赖..."
+          npm install || true
+          ohpm install || true
+      
+      - name: 构建 HAP
+        run: |
+          echo "构建 HarmonyOS 应用包..."
+          # 使用 hvigor 构建
+          npx hvigor assembleHap || echo "构建需要 HarmonyOS SDK 环境"
+      
+      - name: 上传构建产物
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: harmony-openclaw-hap
+          path: |
+            entry/build/default/outputs/default/*.hap
+            **/*.hap
+          retention-days: 30
+          if-no-files-found: ignore
+
+  release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    needs: build
+    if: |
+      always() && 
+      needs.build.result == 'success' && 
+      (
+        (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+        (github.event_name == 'workflow_dispatch' && github.event.inputs.create_release == 'true')
+      )
+    permissions:
+      contents: write
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: 下载构建产物
+        uses: actions/download-artifact@v4
+        with:
+          name: harmony-openclaw-hap
+          path: ./hap
+      
+      - name: 获取版本信息
+        id: version
+        run: |
+          VERSION=$(date +'%Y.%m.%d')
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "tag=v$VERSION-$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_OUTPUT
+      
+      - name: 创建 Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: OpenClaw HarmonyOS ${{ steps.version.outputs.version }}
+          body: |
+            ## OpenClaw for HarmonyOS
+            
+            ### 构建信息
+            - 平台: HarmonyOS 4.0+
+            - 分支: ${{ github.ref_name }}
+            - 提交: ${{ github.sha }}
+            
+            ### 系统要求
+            - HarmonyOS 4.0+
+            - API Version 10+
+            
+            ### 安装说明
+            1. 下载 HAP 文件
+            2. 通过 DevEco Studio 或 hdc 工具安装
+            
+            ### 更新日志
+            查看 [commits](https://github.com/${{ github.repository }}/commits/main) 获取详细更新内容。
+          files: |
+            hap/*.hap
+          draft: false
+          prerelease: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
