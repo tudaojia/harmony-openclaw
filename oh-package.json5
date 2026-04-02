@@ -1,0 +1,16 @@
+{
+  "name": "harmony-openclaw",
+  "version": "1.0.0",
+  "description": "OpenClaw for HarmonyOS",
+  "main": "",
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@ohos/terminal": "file:terminal",
+    "@ohos/bootstrap": "file:bootstrap"
+  },
+  "devDependencies": {
+    "@ohos/hvigor": "^4.0.0",
+    "@ohos/hvigor-ohos-plugin": "^4.0.0"
+  }
+}
