@@ -1,0 +1,12 @@
+{
+  "module": {
+    "name": "bootstrap",
+    "type": "har",
+    "description": "Bootstrap Installation Module",
+    "deviceTypes": [
+      "default",
+      "tablet"
+    ],
+    "deliveryWithInstall": true
+  }
+}
