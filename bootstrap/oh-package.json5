@@ -1,0 +1,14 @@
+{
+  "name": "@ohos/bootstrap",
+  "version": "1.0.0",
+  "description": "Bootstrap Installation Module for OpenClaw",
+  "main": "index.ets",
+  "author": "OpenClaw Team",
+  "license": "MIT",
+  "types": "index.ets",
+  "dependencies": {},
+  "devDependencies": {
+    "@ohos/hvigor": "^4.0.2",
+    "@ohos/hvigor-ohos-plugin": "^4.0.2"
+  }
+}
