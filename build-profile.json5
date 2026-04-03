@@ -1,12 +1,37 @@
 {
   "app": {
-    "signingConfigs": [],
+    "signingConfigs": [
+      {
+        "name": "default",
+        "type": "HarmonyOS",
+        "material": {
+          "certpath": "signature/openclaw.cer",
+          "storePassword": "0000001A9B2A0C3D4E5F6A7B8C9D0E1F2A3B4C5D6E7F8A9B0C1D2E3F4A5B6C7D8.",
+          "keyAlias": "openclaw",
+          "keyPassword": "0000001A9B2A0C3D4E5F6A7B8C9D0E1F2A3B4C5D6E7F8A9B0C1D2E3F4A5B6C7D8.",
+          "profile": "signature/openclaw.p7b",
+          "signAlg": "SHA256withECDSA",
+          "storeFile": "signature/openclaw.p12"
+        }
+      }
+    ],
     "compileSdkVersion": 10,
     "compatibleSdkVersion": 10,
     "products": [
       {
         "name": "default",
-        "signingConfig": "default"
+        "signingConfig": "default",
+        "compileSdkVersion": 10,
+        "compatibleSdkVersion": 10,
+        "runtimeOS": "HarmonyOS"
+      }
+    ],
+    "buildModeSet": [
+      {
+        "name": "debug"
+      },
+      {
+        "name": "release"
       }
     ]
   },
