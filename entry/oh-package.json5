@@ -1,0 +1,16 @@
+{
+  "name": "entry",
+  "version": "1.0.0",
+  "description": "OpenClaw Entry Module",
+  "main": "",
+  "author": "OpenClaw Team",
+  "license": "MIT",
+  "dependencies": {
+    "@ohos/terminal": "file:../terminal",
+    "@ohos/bootstrap": "file:../bootstrap"
+  },
+  "devDependencies": {
+    "@ohos/hvigor": "^4.0.2",
+    "@ohos/hvigor-ohos-plugin": "^4.0.2"
+  }
+}
