@@ -1,0 +1,20 @@
+{
+  "apiType": "faMode",
+  "buildOption": {
+    "externalNativeOptions": {
+      "path": "./src/main/cpp/CMakeLists.txt",
+      "arguments": "",
+      "cppFlags": "-std=c++17 -fno-rtti",
+      "targets": [
+        {
+          "name": "default"
+        }
+      ]
+    }
+  },
+  "targets": [
+    {
+      "name": "default"
+    }
+  ]
+}
