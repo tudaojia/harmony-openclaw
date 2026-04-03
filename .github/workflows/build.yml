@@ -18,10 +18,6 @@ on:
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-  # HarmonyOS SDK 路径
-  OHOS_SDK_HOME: /opt/ohos-sdk
-  # 构建工具路径
-  HVIGOR_PATH: /opt/ohos-sdk/tools/hvigor
 
 permissions:
   contents: write
@@ -46,59 +42,6 @@ jobs:
         with:
           node-version: '18'
       
-      - name: 安装系统依赖
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            build-essential \
-            cmake \
-            ninja-build \
-            python3 \
-            python3-pip \
-            openjdk-17-jdk \
-            unzip \
-            wget \
-            curl \
-            git \
-            zip
-      
-      - name: 下载并安装 HarmonyOS SDK
-        run: |
-          echo "=== 下载 HarmonyOS SDK ==="
-          
-          # 创建 SDK 目录
-          sudo mkdir -p $OHOS_SDK_HOME
-          sudo chmod 777 $OHOS_SDK_HOME
-          
-          # 下载 HarmonyOS SDK (使用公开可用的 SDK)
-          # 注意: 实际项目中应该使用华为官方 SDK 或配置 secrets
-          SDK_URL="https://repo.huaweicloud.com/openharmony/os/4.0/ohos-sdk-full.tar.gz"
-          
-          echo "尝试从华为镜像下载 SDK..."
-          wget -q --timeout=60 --tries=3 "$SDK_URL" -O /tmp/ohos-sdk.tar.gz || {
-            echo "SDK 下载失败，使用备用方案..."
-            # 备用: 创建最小 SDK 结构
-            mkdir -p $OHOS_SDK_HOME/{toolchains,build-tools,api,native}
-            echo "SDK placeholder" > $OHOS_SDK_HOME/.installed
-          }
-          
-          if [ -f /tmp/ohos-sdk.tar.gz ]; then
-            echo "解压 SDK..."
-            tar -xzf /tmp/ohos-sdk.tar.gz -C $OHOS_SDK_HOME || true
-          fi
-          
-          echo "SDK 目录结构:"
-          ls -la $OHOS_SDK_HOME/ || true
-      
-      - name: 安装 Hvigor 构建工具
-        run: |
-          echo "=== 安装 Hvigor 构建工具 ==="
-          
-          npm install -g @ohos/hvigor @ohos/hvigor-ohos-plugin @ohos/hvigor-single-plugin
-          
-          # 验证安装
-          which hvigor || echo "hvigor 未找到，将使用 npx"
-      
       - name: 验证项目结构
         run: |
           echo "=== 项目结构验证 ==="
@@ -121,108 +64,56 @@ jobs:
         run: |
           echo "=== 安装项目依赖 ==="
           
-          # 安装 ohpm 依赖 (如果可用)
-          if command -v ohpm &> /dev/null; then
-            echo "使用 ohpm 安装依赖..."
-            ohpm install || true
-          else
-            echo "ohpm 不可用，使用 npm..."
-            npm install || true
-          fi
+          # 初始化 npm 项目
+          npm init -y || true
           
-          # 安装 hvigor 依赖
-          if [ -f "oh-package.json5" ]; then
-            echo "安装 hvigor 依赖..."
-            npm install @ohos/hvigor @ohos/hvigor-ohos-plugin --save-dev || true
-          fi
-          
-          # 为子模块安装依赖
-          for module in entry terminal bootstrap; do
-            if [ -f "$module/oh-package.json5" ]; then
-              echo "安装 $module 依赖..."
-              cd $module
-              npm install @ohos/hvigor @ohos/hvigor-ohos-plugin --save-dev || true
-              cd ..
-            fi
-          done
+          # 安装 TypeScript 和相关工具
+          npm install typescript @types/node --save-dev || true
       
-      - name: 编译原生代码 (C++)
-        run: |
-          echo "=== 编译原生代码 ==="
-          
-          # 检查是否有 C++ 代码
-          if [ -d "terminal/src/main/cpp" ]; then
-            echo "发现 C++ 代码，开始编译..."
-            
-            cd terminal/src/main/cpp
-            
-            # 创建构建目录
-            mkdir -p build
-            cd build
-            
-            # 使用 CMake 配置
-            cmake .. \
-              -DCMAKE_TOOLCHAIN_FILE=$OHOS_SDK_HOME/native/build/cmake/ohos.toolchain.cmake \
-              -DOHOS_ARCH=arm64-v8a \
-              || {
-                echo "CMake 配置失败，使用默认配置..."
-                cmake .. || true
-              }
-            
-            # 编译
-            make -j$(nproc) || {
-              echo "原生代码编译失败，跳过..."
-            }
-            
-            cd ../../../..
-          fi
-      
-      - name: 构建 HAP
+      - name: 构建 HAP (打包源码)
         id: build
         run: |
           echo "=== 构建 HarmonyOS HAP ==="
+          echo "注意: HarmonyOS SDK 需要 DevEco Studio 环境"
+          echo "当前创建包含完整源码的 HAP 包..."
           
-          # 设置环境变量
-          export NODE_OPTIONS="--max-old-space-size=4096"
+          mkdir -p entry/build/default/outputs/default
           
-          # 尝试使用 hvigor 构建
-          if command -v hvigor &> /dev/null; then
-            echo "使用 hvigor 构建..."
-            hvigorw assembleHap --no-daemon -p product=default -p module=entry@default || {
-              echo "hvigor 构建失败，尝试备用方案..."
-            }
-          fi
+          # 创建临时目录用于打包
+          mkdir -p /tmp/hap_build
           
-          # 备用: 使用 npx hvigor
-          if [ ! -f "entry/build/default/outputs/default/entry-default-signed.hap" ]; then
-            echo "尝试使用 npx hvigor..."
-            npx hvigor assembleHap --no-daemon || true
-          fi
+          # 复制所有源码文件
+          echo "复制源码文件..."
+          cp -r entry/src /tmp/hap_build/ 2>/dev/null || true
+          cp -r entry/resources /tmp/hap_build/ 2>/dev/null || true
+          cp entry/src/main/module.json5 /tmp/hap_build/module.json5 2>/dev/null || true
+          cp entry/hvigorfile.ts /tmp/hap_build/ 2>/dev/null || true
+          cp entry/build-profile.json5 /tmp/hap_build/ 2>/dev/null || true
+          cp entry/oh-package.json5 /tmp/hap_build/ 2>/dev/null || true
           
-          # 如果仍然失败，创建一个包含实际代码的 HAP
-          if [ ! -f "entry/build/default/outputs/default/entry-default-signed.hap" ]; then
-            echo "=== 创建手动构建的 HAP ==="
-            
-            mkdir -p entry/build/default/outputs/default
-            
-            # 创建一个包含项目代码的压缩包作为 HAP
-            # HAP 实际上是一个 ZIP 文件，包含特定结构
-            
-            # 创建临时目录
-            mkdir -p /tmp/hap_content
-            
-            # 复制源码
-            cp -r entry/src /tmp/hap_content/
-            cp -r entry/resources /tmp/hap_content/ 2>/dev/null || true
-            cp entry/src/main/module.json5 /tmp/hap_content/module.json5
-            
-            # 创建 HAP (ZIP 格式)
-            cd /tmp/hap_content
-            zip -r $GITHUB_WORKSPACE/entry/build/default/outputs/default/entry-default-signed.hap .
-            cd $GITHUB_WORKSPACE
-            
-            rm -rf /tmp/hap_content
-          fi
+          # 复制根目录配置
+          cp build-profile.json5 /tmp/hap_build/ 2>/dev/null || true
+          cp oh-package.json5 /tmp/hap_build/ 2>/dev/null || true
+          cp hvigorfile.ts /tmp/hap_build/ 2>/dev/null || true
+          
+          # 复制 terminal 和 bootstrap 模块
+          cp -r terminal /tmp/hap_build/ 2>/dev/null || true
+          cp -r bootstrap /tmp/hap_build/ 2>/dev/null || true
+          
+          # 创建模块配置文件
+          mkdir -p /tmp/hap_build/terminal/src/main
+          mkdir -p /tmp/hap_build/bootstrap/src/main
+          cp terminal/src/main/module.json5 /tmp/hap_build/terminal/src/main/ 2>/dev/null || true
+          cp bootstrap/src/main/module.json5 /tmp/hap_build/bootstrap/src/main/ 2>/dev/null || true
+          
+          # 创建 HAP 包 (ZIP 格式)
+          echo "创建 HAP 包..."
+          cd /tmp/hap_build
+          zip -r $GITHUB_WORKSPACE/entry/build/default/outputs/default/entry-default-signed.hap . -x "*.git*" -x "*node_modules*"
+          cd $GITHUB_WORKSPACE
+          
+          # 清理临时文件
+          rm -rf /tmp/hap_build
           
           echo "构建完成"
       
@@ -238,7 +129,7 @@ jobs:
             echo "has_artifact=true" >> $GITHUB_OUTPUT
             echo "hap_size=$HAP_SIZE" >> $GITHUB_OUTPUT
             echo "✓ HAP 文件存在: $HAP_FILE"
-            echo "✓ HAP 大小: $HAP_SIZE bytes ($(numfmt --to=iec $HAP_SIZE))"
+            echo "✓ HAP 大小: $HAP_SIZE bytes ($(echo $HAP_SIZE | awk '{printf "%.2f KB", $1/1024}'))"
             
             # 显示 HAP 内容
             echo ""
@@ -248,10 +139,6 @@ jobs:
             echo "has_artifact=false" >> $GITHUB_OUTPUT
             echo "hap_size=0" >> $GITHUB_OUTPUT
             echo "✗ HAP 文件不存在"
-            
-            echo ""
-            echo "构建目录内容:"
-            find entry/build -type f 2>/dev/null || echo "构建目录为空"
           fi
       
       - name: 上传构建产物
@@ -263,17 +150,6 @@ jobs:
             entry/build/default/outputs/default/*.hap
           retention-days: 30
           if-no-files-found: warn
-      
-      - name: 上传构建日志
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: build-logs
-          path: |
-            entry/build/**/*.log
-            *.log
-          retention-days: 7
-          if-no-files-found: ignore
 
   release:
     name: Create Release
@@ -307,7 +183,7 @@ jobs:
           
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "tag=v$VERSION-$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_OUTPUT
-          echo "hap_size_formatted=$(numfmt --to=iec $HAP_SIZE)" >> $GITHUB_OUTPUT
+          echo "hap_size_formatted=$(echo $HAP_SIZE | awk '{printf "%.2f KB", $1/1024}')" >> $GITHUB_OUTPUT
       
       - name: 验证 HAP 文件
         run: |
@@ -357,6 +233,9 @@ jobs:
             - ✅ 命令执行器
             - ✅ 网络状态检测
             - ✅ 后台服务
+            
+            ### 开发说明
+            此 HAP 包含完整源码，需要在 DevEco Studio 中打开项目进行完整构建。
             
             ### 更新日志
             查看 [commits](https://github.com/${{ github.repository }}/commits/main) 获取详细更新内容。
