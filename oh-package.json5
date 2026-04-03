@@ -1,16 +1,25 @@
 {
   "name": "harmony-openclaw",
   "version": "1.0.0",
-  "description": "OpenClaw for HarmonyOS",
+  "description": "OpenClaw for HarmonyOS - AI Agent Platform",
   "main": "",
-  "author": "",
+  "author": "OpenClaw Team",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tudaojia/harmony-openclaw"
+  },
   "dependencies": {
     "@ohos/terminal": "file:terminal",
     "@ohos/bootstrap": "file:bootstrap"
   },
   "devDependencies": {
-    "@ohos/hvigor": "^4.0.0",
-    "@ohos/hvigor-ohos-plugin": "^4.0.0"
+    "@ohos/hvigor": "^4.0.2",
+    "@ohos/hvigor-ohos-plugin": "^4.0.2",
+    "@ohos/hvigor-single-plugin": "^4.0.2"
+  },
+  "overrides": {
+    "@ohos/hvigor": "^4.0.2",
+    "@ohos/hvigor-ohos-plugin": "^4.0.2"
   }
 }
