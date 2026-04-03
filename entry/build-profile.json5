@@ -1,0 +1,44 @@
+{
+  "apiType": "faMode",
+  "buildOption": {
+    "externalNativeOptions": {
+      "path": "./src/main/cpp/CMakeLists.txt",
+      "arguments": "",
+      "cppFlags": "",
+      "targets": [
+        {
+          "name": "default",
+          "runtimeOS": "HarmonyOS"
+        }
+      ]
+    },
+    "arkOptions": {
+      "enableProfile": false,
+      "enableSystrace": false
+    }
+  },
+  "buildModeSet": [
+    {
+      "name": "debug",
+      "buildOption": {
+        "arkOptions": {
+          "enableDebug": true
+        }
+      }
+    },
+    {
+      "name": "release",
+      "buildOption": {
+        "arkOptions": {
+          "enableDebug": false
+        }
+      }
+    }
+  ],
+  "targets": [
+    {
+      "name": "default",
+      "runtimeOS": "HarmonyOS"
+    }
+  ]
+}
