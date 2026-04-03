@@ -1,0 +1,12 @@
+{
+  "module": {
+    "name": "terminal",
+    "type": "har",
+    "description": "Terminal Emulator Module",
+    "deviceTypes": [
+      "default",
+      "tablet"
+    ],
+    "deliveryWithInstall": true
+  }
+}
